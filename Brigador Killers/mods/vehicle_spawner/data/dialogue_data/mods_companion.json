@@ -1,0 +1,21 @@
+{
+	"mods_companion": {
+		"mods_companion-00": {
+			"begin_callback": "",
+			"blocking_duration": false,
+			"display_name": "dname.cavalier",
+			"duration": 5,
+			"end_callback": "",
+			"ephemeral": false,
+			"name": "mods_companion-00",
+			"predicate": "",
+			"priority": 0,
+			"remote": false,
+			"response": "",
+			"sound": "",
+			"tags": [],
+			"text": "mods_companion.hello",
+			"theme_path": "assets/data/ui/dialogue/theme_anchor_cavalier.json"
+		}
+	}
+}
