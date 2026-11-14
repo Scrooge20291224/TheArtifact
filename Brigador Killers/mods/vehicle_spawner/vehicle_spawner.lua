@@ -318,6 +318,11 @@ local function register_companion_update()
             return
         end
 
+        -- 暂停时不发任何新指令，避免覆盖手动 Halt 的结果
+        if _G.__vs_companion_paused then
+            return
+        end
+
         local list = _G.__vs_companions
         if not list or #list == 0 then
             return
@@ -350,13 +355,38 @@ local function register_companion_update()
             local dx, dy = mx - px, my - py
             local dist2 = dx * dx + dy * dy
 
-            if dist2 > 64 then
-                -- 目标是"玩家周围 6 单位处"，不是玩家脚点。
-                -- 否则 NPC 会自己贴脸，变成被动触发对话。
-                local len = math.sqrt(dist2)
-                local gx = px + (dx / len) * 6
-                local gy = py + (dy / len) * 6
-                m:MoveTo(Vec2.New(gx, gy))
+            local follow = _G.__vs_companion_follow
+            if follow == nil then
+                follow = true
+            end
+
+            if follow then
+                -- 跟随距离可调：默认 8 单位。
+                -- 队友有 NORMAL 索敌 AI，会自己追出去打；阈值太小会不停打断交火。
+                -- 用 vs_companion_range(30) 放宽，让它能跑远点打架。
+                local follow_range = _G.__vs_companion_range or 8
+                if dist2 > follow_range * follow_range then
+                    -- 目标是"玩家周围 6 单位处"，不是玩家脚点。
+                    -- 否则 NPC 会自己贴脸，变成被动触发对话。
+                    local len = math.sqrt(dist2)
+                    local gx = px + (dx / len) * 6
+                    local gy = py + (dy / len) * 6
+                    m:MoveTo(Vec2.New(gx, gy))
+                end
+            else
+                -- 非跟随模式：主动与玩家保持距离。
+                -- 玩家进入 10 单位内就退到 16 单位外。
+                if dist2 < 100 then
+                    local len = math.sqrt(dist2)
+                    if len < 0.001 then
+                        len = 0.001
+                        dx = 1
+                        dy = 0
+                    end
+                    local gx = px + (dx / len) * 16
+                    local gy = py + (dy / len) * 16
+                    m:MoveTo(Vec2.New(gx, gy))
+                end
             end
 
             -- 必须几乎叠在一起（约 1.4 单位）才触发，等同"撞上"。
@@ -395,8 +425,7 @@ local function register_companion_update()
 end
 
 -- 生成一个独立 NPC 同伴（不抢玩家座位），会跟随并在靠近时弹对话框
-function vs_spawn_companion(vehicle_path)
-    -- 默认是红甲 Rig Carmine
+function vs_spawn_companion(vehicle_path)    -- 默认是红甲 Rig Carmine
     vehicle_path = vehicle_path or DEFAULT_VEHICLE
 
     local p = get_player()
@@ -445,6 +474,248 @@ function vs_spawn_companion(vehicle_path)
     vs_talk("mods_companion-00")
 
     return m
+end
+
+-- ===== 实验：behavior=PLAYER 的独立单位 =====
+-- 已验证：
+--   * MoveTo 可立即覆盖之前的游荡 AI，等效于"抢占控制"
+--   * Halt 无效，但 MoveTo 当前位置可替代停住
+--   * GetPlayer() 不指向它，不会抢玩家相机/输入
+-- 尚未验证：team=0 时敌人是否会打它、它是否会反击
+
+function vs_spawn_fake_player(vehicle_path)
+    vehicle_path = vehicle_path or DEFAULT_VEHICLE
+    local p = get_player()
+    if not p then
+        log("找不到玩家")
+        return nil
+    end
+
+    local px, py = p:GetPosition()
+    local face = p:GetOrient() or 0
+    local x = px + math.cos(face + math.pi * 0.5) * 4
+    local y = py + math.sin(face + math.pi * 0.5) * 4
+
+    local m = Mech.Create(vehicle_path, Vec2.New(x, y), face, 0, 0)
+    if not m then
+        log("生成失败，检查路径: " .. tostring(vehicle_path))
+        return nil
+    end
+
+    m:SetName("FakePlayer")
+    _G.__vs_fake_player = m
+    log(string.format("已生成 BEHAVIOR_PLAYER 单位于 (%.1f,%.1f)，ID=%s",
+        x, y, tostring(m:GetID())))
+    log("GetPlayer() 是否指向它 = " .. tostring(p:GetID() == m:GetID()))
+    log("可用 MoveTo 抢占控制；停住请 MoveTo 它当前位置")
+    return m
+end
+
+function vs_fake_status()
+    local m = _G.__vs_fake_player
+    if not m then
+        log("没有 fake player 记录")
+        return
+    end
+    if not m:Valid() then
+        log("fake player 已失效")
+        return
+    end
+    local mx, my = m:GetPosition()
+    local px, py = 0, 0
+    local p = get_player()
+    if p then
+        px, py = p:GetPosition()
+    end
+    log(string.format("FakePlayer=(%.1f,%.1f) 玩家=(%.1f,%.1f) 距离=%.1f",
+        mx, my, px, py, math.sqrt((mx - px) * (mx - px) + (my - py) * (my - py))))
+    if p then
+        log("GetPlayer() 是否指向它 = " .. tostring(p:GetID() == m:GetID()))
+    end
+end
+
+-- 测试 1：MoveTo（AI 指令层，可立即覆盖游荡）
+function vs_fake_move(x, y)
+    local m = _G.__vs_fake_player
+    if not m or not m:Valid() then
+        log("没有有效的 fake player")
+        return false
+    end
+    if not x then
+        local p = get_player()
+        local px, py = p:GetPosition()
+        x, y = px + 8, py
+    end
+    m:MoveTo(Vec2.New(x, y))
+    local mx, my = m:GetPosition()
+    log(string.format("MoveTo(%.1f,%.1f) 已下发，当前位置 (%.1f,%.1f)", x, y, mx, my))
+    return true
+end
+
+-- 替代 Halt：把目标设为当前位置即可"停住"
+function vs_fake_stop()
+    local m = _G.__vs_fake_player
+    if not m or not m:Valid() then
+        log("没有有效的 fake player")
+        return false
+    end
+    local mx, my = m:GetPosition()
+    m:MoveTo(Vec2.New(mx, my))
+    log(string.format("已发送 MoveTo 当前位置 (%.1f,%.1f)，应停住", mx, my))
+    return true
+end
+
+-- 测试 3：SetPosition（物理层强制位移，绕过 AI）
+function vs_fake_teleport(dx, dy)
+    local m = _G.__vs_fake_player
+    if not m or not m:Valid() then
+        log("没有有效的 fake player")
+        return false
+    end
+    local mx, my = m:GetPosition()
+    m:SetPosition(Vec2.New(mx + (dx or 5), my + (dy or 0)))
+    local nx, ny = m:GetPosition()
+    log(string.format("SetPosition -> (%.1f,%.1f)", nx, ny))
+    return true
+end
+
+-- 实验 B：NORMAL 行为 + team=0
+-- 目的：验证 NORMAL 索敌 AI 是否把 team=1 当敌人、是否会自动开火
+function vs_spawn_combat_friend(vehicle_path)
+    vehicle_path = vehicle_path or DEFAULT_VEHICLE
+    local p = get_player()
+    if not p then
+        log("找不到玩家")
+        return nil
+    end
+
+    local px, py = p:GetPosition()
+    local face = p:GetOrient() or 0
+    local x = px + math.cos(face + math.pi * 0.5) * 5
+    local y = py + math.sin(face + math.pi * 0.5) * 5
+
+    -- Mech.Create(resource, pos, orient, behavior, team)
+    -- behavior=1 (NORMAL), team=0 (PLAYER)
+    local m = Mech.Create(vehicle_path, Vec2.New(x, y), face, 1, 0)
+    if not m then
+        log("生成失败")
+        return nil
+    end
+
+    m:SetName("CombatFriend")
+    _G.__vs_combat_friend = m
+    log(string.format("已生成 BEHAVIOR_NORMAL+team=0 单位于 (%.1f,%.1f)", x, y))
+    log("进战斗场景，把它 MoveTo 敌人附近，观察是否自动开火")
+    return m
+end
+
+-- ===== 实验 C：DisableAI + MoveTo 组合 =====
+-- 目的：验证 DisableAI 关掉游荡 AI 后，MoveTo 是否仍能驱动 fake player
+-- 如果成立 → 得到"脚本完全控，引擎只负责物理/渲染/碰撞"的理想状态
+function vs_spawn_driven(vehicle_path)
+    vehicle_path = vehicle_path or DEFAULT_VEHICLE
+    local p = get_player()
+    if not p then log("找不到玩家"); return nil end
+
+    local px, py = p:GetPosition()
+    local face = p:GetOrient() or 0
+    local x = px + math.cos(face + math.pi * 0.5) * 6
+    local y = py + math.sin(face + math.pi * 0.5) * 6
+
+    local m = Mech.Create(vehicle_path, Vec2.New(x, y), face, 0, 0)
+    if not m then log("生成失败"); return nil end
+
+    -- 立即关掉游荡 AI
+    if m.DisableAI then
+        m:DisableAI()
+        log("已 DisableAI() — 游荡 AI 应该停了")
+    else
+        log("警告：DisableAI 方法不存在")
+    end
+
+    m:SetName("Driven")
+    _G.__vs_driven = m
+    log(string.format("已生成 DRIVEN 单位于 (%.1f,%.1f)", x, y))
+    log("等 5 秒看它还会不会自己走动；然后 vs_driven_move() 验证 MoveTo 是否仍生效")
+    return m
+end
+
+function vs_driven_move(x, y)
+    local m = _G.__vs_driven
+    if not m or not m:Valid() then log("没有有效的 Driven 单位"); return false end
+    if not x then
+        local p = get_player(); local px, py = p:GetPosition()
+        x, y = px + 10, py
+    end
+    m:MoveTo(Vec2.New(x, y))
+    local mx, my = m:GetPosition()
+    log(string.format("MoveTo(%.1f,%.1f) 已下发，当前 (%.1f,%.1f)", x, y, mx, my))
+    return true
+end
+
+function vs_driven_look(tx, ty)
+    local m = _G.__vs_driven
+    if not m or not m:Valid() then log("没有有效的 Driven 单位"); return false end
+    m:Look(Vec2.New(tx, ty))
+    log(string.format("Look(%.1f,%.1f) 已下发", tx, ty))
+    return true
+end
+
+-- 打断所有同伴当前的移动指令并暂停跟随
+function vs_companion_halt()
+    _G.__vs_companion_paused = true
+    local list = _G.__vs_companions or {}
+    local n = 0
+    for i = 1, #list do
+        local m = list[i]
+        if m and m:Valid() then
+            m:Halt()
+            n = n + 1
+        end
+    end
+    log("已打断 " .. n .. " 个同伴的移动指令，跟随已暂停（vs_companion_resume 恢复）")
+    return n
+end
+
+-- 恢复同伴跟随/对话逻辑
+function vs_companion_resume()
+    _G.__vs_companion_paused = false
+    log("同伴逻辑已恢复")
+end
+
+-- 开关队友跟随模式
+-- 用法: lua vs_companion_follow()       -- 切换
+--       lua vs_companion_follow(true)   -- 开启跟随
+--       lua vs_companion_follow(false)  -- 关闭跟随（主动保持距离）
+function vs_companion_follow(on)
+    if on == nil then
+        local cur = _G.__vs_companion_follow
+        if cur == nil then
+            cur = true
+        end
+        on = not cur
+    end
+    _G.__vs_companion_follow = on and true or false
+    log("队友跟随模式: " .. (_G.__vs_companion_follow and "开（跟随玩家）" or "关（主动保持距离）"))
+    return _G.__vs_companion_follow
+end
+
+-- 设置队友的跟随距离（单位）。队友有索敌 AI，会追出去打；
+-- 阈值太小会不停把它拽回来，导致交火中断。
+--   lua vs_companion_range(30)   -- 放宽到 30 单位，让它能跑远点打
+--   lua vs_companion_range()     -- 查看当前值
+function vs_companion_range(units)
+    if units == nil then
+        log("当前跟随距离 = " .. tostring(_G.__vs_companion_range or 8) .. " 单位")
+        return _G.__vs_companion_range or 8
+    end
+    if type(units) ~= "number" or units <= 0 then
+        log("参数必须是正数（单位）")
+        return
+    end
+    _G.__vs_companion_range = units
+    log("队友跟随距离设为 " .. tostring(units) .. " 单位")
+    return units
 end
 
 -- 诊断同伴状态（跟不跟、距离多少、update 代号）
@@ -632,6 +903,15 @@ function vs_help()
   vs_spawn([载具路径], [距离], [loadout路径])  生成并上车
   vs_spawn_companion([载具路径])        生成独立 NPC 同伴（跟随+靠近自动弹对话框）
   vs_companion_status()                打印同伴位置/距离/update 状态
+  vs_companion_follow([true/false])    开关跟随（关=主动与玩家保持距离）
+  vs_companion_halt()                  打断所有同伴移动指令并暂停跟随
+  vs_companion_resume()                恢复同伴跟随/对话
+  --- 实验：behavior=PLAYER 独立单位 ---
+  vs_spawn_fake_player([载具路径])     生成 behavior=0 team=0 的独立单位
+  vs_fake_status()                     打印它的位置/距离/是否被 GetPlayer 认领
+  vs_fake_move([x, y])                 对它下发 MoveTo（默认玩家右侧 8 单位）
+  vs_fake_halt()                       对它 Halt
+  vs_fake_teleport([dx, dy])           物理层强制位移（验证脚本是否完全可控）
   vs_spawn_player_team([载具路径])     玩家 team + NORMAL AI
   vs_spawn_enemy([载具路径])           敌人 team + NORMAL AI
   vs_spawn_at_cursor([载具路径])       鼠标位置生成（用当前 team/behavior）
