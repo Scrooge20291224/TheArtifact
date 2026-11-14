@@ -514,6 +514,118 @@ function vs_add_storylet(name, text, display_name)
     end
 end
 
+-- ==== 载具参数热改 ====
+-- 原理：io 读写 legs JSON → 正则替换字段 → cmd("reload", "player") 重载
+-- 首次修改前自动备份到 <path>.vsbak，可用 vs_tune_restore 还原。
+
+local function vs_fs_read(path)
+    local f = io and io.open(path, "rb")
+    if not f then
+        return nil
+    end
+    local s = f:read("*a")
+    f:close()
+    return s
+end
+
+local function vs_fs_write(path, content)
+    local f = io and io.open(path, "wb")
+    if not f then
+        return false
+    end
+    f:write(content)
+    f:close()
+    return true
+end
+
+-- 探测 io / 写权限 / reload 命令是否可用
+function vs_tune_probe()
+    log("io = " .. tostring(io))
+    log("io.open = " .. tostring(io and io.open))
+    log("loadfile = " .. tostring(loadfile))
+    log("pack_read = " .. tostring(pack_read))
+    log("JsonDecode = " .. tostring(rawget(_G, "JsonDecode")))
+    log("JsonEncode = " .. tostring(rawget(_G, "JsonEncode")))
+
+    local legs = "assets/data/vics/lowers/rig_volta_carmine_01_lo.json"
+    local s = vs_fs_read(legs)
+    log("直接读 " .. legs .. " = " .. (s and ("成功 " .. #s .. " 字节") or "失败"))
+
+    local probe = "assets/scripts/mods/_vs_write_test.txt"
+    local ok = vs_fs_write(probe, "ok")
+    log("写文件测试 = " .. tostring(ok) .. " -> " .. probe)
+end
+
+-- 读取某个数值字段
+-- 用法: lua vs_tune_get("assets/data/vics/lowers/rig_volta_carmine_01_lo.json", "max_forward_speed")
+function vs_tune_get(path, field)
+    local s = vs_fs_read(path)
+    if not s then
+        log("读不到文件: " .. tostring(path))
+        return nil
+    end
+    local v = s:match('"' .. field .. '"%s*:%s*([-+0-9%.eE]+)')
+    log(string.format("%s = %s", tostring(field), tostring(v)))
+    return tonumber(v)
+end
+
+-- 修改某个数值字段并重载玩家载具
+-- 用法: lua vs_tune_set("assets/data/vics/lowers/rig_volta_carmine_01_lo.json", "max_forward_speed", 2.5)
+function vs_tune_set(path, field, value)
+    local s = vs_fs_read(path)
+    if not s then
+        log("读不到文件: " .. tostring(path))
+        return false
+    end
+
+    -- 首次改动前备份
+    if not vs_fs_read(path .. ".vsbak") then
+        if vs_fs_write(path .. ".vsbak", s) then
+            log("已备份 -> " .. path .. ".vsbak")
+        end
+    end
+
+    local pat = '("' .. field .. '"%s*:%s*)[-+0-9%.eE]+'
+    local new, n = s:gsub(pat, function(prefix)
+        return prefix .. tostring(value)
+    end)
+
+    if n == 0 then
+        log("文件里找不到字段: " .. tostring(field))
+        return false
+    end
+
+    if not vs_fs_write(path, new) then
+        log("写入失败: " .. tostring(path))
+        return false
+    end
+
+    log(string.format("已修改 %s = %s（%d 处）", tostring(field), tostring(value), n))
+    if cmd then
+        cmd("reload", "player")
+        log("已执行 reload player")
+    end
+    return true
+end
+
+-- 从 .vsbak 还原
+function vs_tune_restore(path)
+    local b = vs_fs_read(path .. ".vsbak")
+    if not b then
+        log("没有备份: " .. tostring(path))
+        return false
+    end
+    if not vs_fs_write(path, b) then
+        log("恢复失败: " .. tostring(path))
+        return false
+    end
+    log("已还原: " .. path)
+    if cmd then
+        cmd("reload", "player")
+    end
+    return true
+end
+
 function vs_help()
     log([[
 命令：
@@ -531,6 +643,10 @@ function vs_help()
   vs_add_storylet(name, text, [名字])  动态注册新对话句
   vs_dump_mech()                       打印 Mech 全部方法（查 AI/team 接口）
   vs_debug()                           打印接口与坐标诊断
+  vs_tune_probe()                      探测 io 读写 / reload 命令是否可用
+  vs_tune_get(路径, 字段)              读取 legs JSON 里的数值
+  vs_tune_set(路径, 字段, 值)          改数值 + reload player（自动备份 .vsbak）
+  vs_tune_restore(路径)                从 .vsbak 还原
   默认载具：]] .. DEFAULT_VEHICLE .. [[
 
 TEAMS: PLAYER=0 ENEMY=1 CIVILIAN=2
