@@ -1,0 +1,10 @@
+.text 0x7FF727D71000 +0x3AA000
+
+=== Player_Action (RVA 0x3ACBA8) ===
+  未找到 RIP-relative 引用
+
+=== Gun_Windup (RVA 0x3ACBD8) ===
+  未找到 RIP-relative 引用
+
+=== ejector (RVA 0x3ACBE8) ===
+  未找到 RIP-relative 引用

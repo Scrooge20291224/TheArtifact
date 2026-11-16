@@ -1,0 +1,7 @@
+ffi_table=true
+base=0x7FF727D70000
+int_read=12345
+cdef=1.5,-3.5
+float_read=3.5,-2.25
+mz=4D5A
+FFI_ALL_OK=true

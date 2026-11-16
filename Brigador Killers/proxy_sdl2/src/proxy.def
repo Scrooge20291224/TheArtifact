@@ -1,5 +1,7 @@
-﻿LIBRARY SDL2
+LIBRARY SDL2
 EXPORTS
+  SDL_Init @337
+  SDL_PollEvent @464
   SDL_AddEventWatch = SDL2_orig.dll.SDL_AddEventWatch @1
   SDL_AddHintCallback = SDL2_orig.dll.SDL_AddHintCallback @2
   SDL_AddTimer = SDL2_orig.dll.SDL_AddTimer @3

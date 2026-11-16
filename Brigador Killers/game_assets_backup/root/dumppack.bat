@@ -1,0 +1,1 @@
+brigadorkillers.exe --console -dumppack
