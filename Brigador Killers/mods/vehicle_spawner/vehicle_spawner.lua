@@ -306,6 +306,18 @@ local _vs_companion_sentences = {
     "mods_companion-02",
 }
 
+-- 取准星（鼠标）的世界坐标。引擎全局 get_mouse_position 返回两个独立数值。
+local function get_aim_point()
+    if not get_mouse_position then
+        return nil
+    end
+    local ok, mx, my = pcall(get_mouse_position)
+    if ok and type(mx) == "number" and type(my) == "number" then
+        return mx, my
+    end
+    return nil
+end
+
 -- 每次 luaload 都会注册一个新的 update，并用「代号」让旧的自动失效。
 -- 不能再用 bool 防重：旧标志一旦为 true，重载后新代码永远注册不上，
 -- 而旧闭包读的是旧 chunk 的 local（nil），表现就是既不跟随也不说话。
@@ -347,6 +359,17 @@ local function register_companion_update()
         _G.__vs_companions = alive
         list = alive
 
+        -- 瞄准模式：每帧取一次准星世界坐标，取不到就自动退出，
+        -- 避免每帧重复报错。
+        local aim_x, aim_y
+        if _G.__vs_companion_aim then
+            aim_x, aim_y = get_aim_point()
+            if not aim_x then
+                _G.__vs_companion_aim = false
+                log("取不到准星世界坐标，已退出瞄准模式")
+            end
+        end
+
         -- 所有同伴独立跟随
         local talker = nil
         for i = 1, #list do
@@ -360,7 +383,18 @@ local function register_companion_update()
                 follow = true
             end
 
-            if follow then
+            if aim_x then
+                -- 瞄准模式：所有同伴奔向准星。
+                -- 按编号在准星周围排一圈（半径 2），避免多台载具挤在同一点。
+                local n = #list
+                local ang = (i - 1) * (math.pi * 2 / n)
+                local gx = aim_x + math.cos(ang) * 2
+                local gy = aim_y + math.sin(ang) * 2
+                local adx, ady = gx - mx, gy - my
+                if adx * adx + ady * ady > 4 then
+                    m:MoveTo(Vec2.New(gx, gy))
+                end
+            elseif follow then
                 -- 跟随距离可调：默认 8 单位。
                 -- 队友有 NORMAL 索敌 AI，会自己追出去打；阈值太小会不停打断交火。
                 -- 用 vs_companion_range(30) 放宽，让它能跑远点打架。
@@ -700,6 +734,19 @@ function vs_companion_follow(on)
     return _G.__vs_companion_follow
 end
 
+-- 开关"瞄准模式"：开启后所有队友持续奔向玩家准星位置
+-- 用法: lua vs_companion_aim()       -- 切换
+--       lua vs_companion_aim(true)   -- 开启（奔向准星）
+--       lua vs_companion_aim(false)  -- 关闭（恢复跟随）
+function vs_companion_aim(on)
+    if on == nil then
+        on = not (_G.__vs_companion_aim and true or false)
+    end
+    _G.__vs_companion_aim = on and true or false
+    log("队友瞄准模式: " .. (_G.__vs_companion_aim and "开（奔向准星）" or "关（恢复跟随）"))
+    return _G.__vs_companion_aim
+end
+
 -- 设置队友的跟随距离（单位）。队友有索敌 AI，会追出去打；
 -- 阈值太小会不停把它拽回来，导致交火中断。
 --   lua vs_companion_range(30)   -- 放宽到 30 单位，让它能跑远点打
@@ -904,6 +951,7 @@ function vs_help()
   vs_spawn_companion([载具路径])        生成独立 NPC 同伴（跟随+靠近自动弹对话框）
   vs_companion_status()                打印同伴位置/距离/update 状态
   vs_companion_follow([true/false])    开关跟随（关=主动与玩家保持距离）
+  vs_companion_aim([true/false])       开关瞄准模式（队友移动到玩家准星位置）
   vs_companion_halt()                  打断所有同伴移动指令并暂停跟随
   vs_companion_resume()                恢复同伴跟随/对话
   --- 实验：behavior=PLAYER 独立单位 ---

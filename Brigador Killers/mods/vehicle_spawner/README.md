@@ -102,6 +102,7 @@ lua vs_spawn_companion("assets/data/vics/units/rig_volta_carmine_01.json")
 | `vs_help()` | 命令列表 |
 | `vs_companion_status()` | 所有队友的位置、距离、状态 |
 | `vs_companion_follow([true/false])` | 开关跟随模式；不带参数=切换。关闭后队友会主动与玩家保持距离 |
+| `vs_companion_aim([true/false])` | 开关瞄准模式；开启后队友奔向玩家准星位置，关闭恢复跟随 |
 | `vs_companion_halt()` | 打断所有队友当前的移动指令并暂停跟随/对话 |
 | `vs_companion_resume()` | 恢复队友跟随/对话逻辑 |
 | `vs_dump_mech()` | 打印引擎暴露的全部 Mech 方法 |
