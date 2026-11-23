@@ -25,15 +25,29 @@
 
 ### 1. 放 DLL
 
-任选固定目录，建议用项目内备份路径（也可用 `C:\bk\`）：
+任选固定目录，建议 `C:\bk\bkswap7.dll`（载入器默认优先找这里）：
+
+```
+C:\bk\bkswap7.dll
+```
+
+项目内备份路径也可用：
 
 ```
 c:\Users\Scrooge\Documents\GitHub\TheArtifact\Brigador Killers\mods\native\bkswap\bin\bkswap7.dll
 ```
 
-> DLL 可以放在磁盘任意位置，路径**不要有中文/空格风险**，Lua 里用正斜杠 `/`。
+> DLL 可以放在磁盘任意位置，Lua 里用正斜杠 `/`。载入器（下一步）会依次尝试上面两个路径。
 
-### 2. 写命令文件
+### 2. 安装载入器 + 写命令文件
+
+把 `loader.lua` 复制到游戏目录：
+
+```
+<游戏根目录>\assets\scripts\mods\bkswap.lua
+```
+
+（本机已装好。）这样就不用每次粘贴超长的 `package.loadlib(...)`。
 
 新建（或覆盖）`%TEMP%\bk_swap.txt`，一行一条命令，例如：
 
@@ -46,15 +60,15 @@ item assets/data/pickups/kit/pkp_comp_actuator_small.json 2
 含义：打印诊断 + 开启自动接管 + 背包里有该物品时玩家载具速度 ×2。
 不写这个文件也能加载，默认只跑一次 `diag`。
 
-### 3. 进关卡后执行
-
-在游戏控制台粘贴（路径换成你的实际路径）：
+### 3. 进关卡后执行（一条短命令）
 
 ```
-lua local f,e=package.loadlib("C:/Users/Scrooge/Documents/GitHub/TheArtifact/Brigador Killers/mods/native/bkswap/bin/bkswap7.dll","luaopen_bkswap"); if f then f() print("OK") else print(e) end
+luaload assets/scripts/mods/bkswap.lua
 ```
 
-看到控制台打印 `OK` 即加载成功。真正的执行结果看 `%TEMP%\bk_swap.log`（控制台只会显示 Lua 的返回值，不显示 DLL 日志）。
+看到 `[bkswap] loaded: ...` 即加载成功。真正的执行结果看 `%TEMP%\bk_swap.log`（控制台只显示 Lua 输出，不显示 DLL 日志）。
+
+> 改完 `bk_swap.txt` 想重新应用，再执行一次 `luaload` 即可（同一 DLL 会再次触发 `luaopen_bkswap`，不重启游戏）。
 
 ---
 
