@@ -591,8 +591,28 @@ static void cmd_entity(void)
     __except (seh_filter(GetExceptionInformation())) { logf_("  state() fault"); return; }
     logf_("ctrl=%p state=%p", (void *)ctrl, (void *)state);
     if (!state || !readable((const void *)state)) return;
+    for (uint64_t o = 0; o < 0x60; o += 8) {
+        uint64_t v = rd64_safe(state + o, &ok);
+        if (ok) logf_("  state+%02llx = %p", (unsigned long long)o, (void *)v);
+    }
     uint32_t id = RD32(state + 0x10), handle = RD32(state + 0x14), flag = RD32(state + 0xC);
     logf_("  id=%u handle=%u flag=%u", id, handle, flag);
+
+    // 直接在 ctrl / game / 候选对象里找 clone、leg 指针
+    scan_ptr(ctrl, 0x2000, clone, "ctrl->clone");
+    scan_ptr(ctrl, 0x2000, clone_leg, "ctrl->cloneleg");
+    scan_ptr(ctrl, 0x2000, unit, "ctrl->unit");
+    uint64_t game2 = rd64_safe(ctrl + 0x40, &ok);
+    if (game2 && readable((const void *)game2)) {
+        scan_ptr(game2, 0x40000, clone, "game->clone");
+        scan_ptr(game2, 0x40000, clone_leg, "game->cloneleg");
+        for (uint64_t o = 0x1C400; o <= 0x1C500; o += 8) {
+            uint64_t v = rd64_safe(game2 + o, &ok);
+            if (!ok || v < 0x10000 || !readable((const void *)v)) continue;
+            scan_ptr(v, 0x4000, clone, "cand->clone");
+            scan_ptr(v, 0x4000, clone_leg, "cand->cloneleg");
+        }
+    }
 
     uint64_t root = rd64_safe(base + OFF_RES_ROOT, &ok);
     uint64_t vec = root ? rd64_safe(root + 0x2788, &ok) : 0;
@@ -619,6 +639,41 @@ static void cmd_entity(void)
     scan_ptr(ent, 0x2000, clone, "ent->cloneunit");
 }
 
+static void cmd_ents(void)
+{
+    uint64_t base = (uint64_t)GetModuleHandleA(NULL);
+    int ok = 0;
+    logf_("== ents ==");
+    uint64_t clone = res_addr("assets/data/vics/corpse_civ_tuktuk_01.json", NULL, NULL);
+    uint64_t clone_leg = 0;
+    if (clone && readable((const void *)clone)) clone_leg = rd64_safe(clone + 0xC0, &ok);
+    logf_("clone=%p clone_leg=%p", (void *)clone, (void *)clone_leg);
+    if (!clone) return;
+
+    uint64_t root = rd64_safe(base + OFF_RES_ROOT, &ok);
+    uint64_t vec = root ? rd64_safe(root + 0x2788, &ok) : 0;
+    if (!vec || !readable((const void *)vec)) { logf_("vec bad"); return; }
+    uint64_t begin = rd64_safe(vec, &ok);
+    uint64_t end = rd64_safe(vec + 8, &ok);
+    if (!begin || !end || end <= begin) { logf_("range bad"); return; }
+    uint64_t n = (end - begin) / 16;
+    logf_("begin=%p n=%llu", (void *)begin, (unsigned long long)n);
+    if (n > 4096) n = 4096;
+    for (uint64_t i = 0; i < n; i++) {
+        uint32_t key = RD32(begin + i * 16);
+        uint32_t key2 = RD32(begin + i * 16 + 4);
+        uint64_t ent = rd64_safe(begin + i * 16 + 8, &ok);
+        if (!ok || !ent || !readable((const void *)ent)) continue;
+        uint64_t v0 = rd64_safe(ent, &ok);
+        int h1 = scan_ptr(ent, 0x4000, clone, "ent->clone");
+        int h2 = scan_ptr(ent, 0x4000, clone_leg, "ent->cloneleg");
+        if (h1 || h2 || i < 18) {
+            logf_("  [%llu] key=%u/%u ent=%p v0=%p hits=%d/%d",
+                 (unsigned long long)i, key, key2, (void *)ent, (void *)v0, h1, h2);
+        }
+    }
+}
+
 static void process_cmd_line(const char *line)
 {
     while (*line == ' ' || *line == '\t') line++;
@@ -627,6 +682,7 @@ static void process_cmd_line(const char *line)
     if (_stricmp(line, "probe") == 0) cmd_probe();
     else if (_stricmp(line, "player") == 0) cmd_player();
     else if (_stricmp(line, "entity") == 0) cmd_entity();
+    else if (_stricmp(line, "ents") == 0) cmd_ents();
     else if (_strnicmp(line, "find ", 5) == 0) cmd_find(line + 5);
     else if (_strnicmp(line, "dump ", 5) == 0) cmd_dump(line + 5);
     else if (_strnicmp(line, "export ", 7) == 0) cmd_export(line + 7);
@@ -661,7 +717,11 @@ static DWORD WINAPI worker(LPVOID param)
             while (*e && *e != '\r' && *e != '\n') e++;
             char save = *e;
             *e = 0;
-            process_cmd_line(p);
+            __try {
+                process_cmd_line(p);
+            } __except (seh_filter(GetExceptionInformation())) {
+                logf_("cmd faulted, worker survives");
+            }
             if (!save) break;
             p = e + 1;
             while (*p == '\r' || *p == '\n') p++;

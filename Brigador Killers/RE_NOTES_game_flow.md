@@ -1754,3 +1754,127 @@ AI 把"+0x4C4 >= 0"等同于"这是必须攻击的目标"
 
 **下一步（数据）**：在某个关卡里把单个 spawn 的 `is_enemy` 改成 `false`，
 观察该单位是否停止攻击玩家 —— 这是最直接的验证，且零风险。
+
+## 2026-11-23 运行时换载具类：全自动链路（bkswap.dll）
+
+结论：Lua 控制台（主线程）内一次性完成 morph → copy → respawn，已实测 Volta→Cinderblock 成功，无需手点调试面板。
+
+### 关键事实
+- 资源换装必须用「已加载」的运行时资源：resarr[idx] 非 0 才可拷贝；关卡外的载具（如 rig_faber_01）resarr=0，无法直接换。
+- 目标资源取运行时内存（18448B），LEG 由 MECH+0xC0 指向（4528B）；clone 槽 = assets/data/vics/corpse_civ_tuktuk_01.json（idx 9990）。
+- 保留运行时非重定位槽：MECH+0x3338、LEG+0x11A0；写回后 MECH+0xC0 = 克隆 LEG。
+- mech 解析链（面板同款）：ctrl=[base+0xB64838] → game=[ctrl+0x40] → state=game+0x1C468 → key=[state+0x30]（key[0] 必须为 0）→ container=[state] → mech=0x140024C80(container,key)。
+- Copy=0x1401AE1C0(mech, res_root+0x2D28)；Respawn=0x1401892C0(ctrl, res_root+0x2D28)。blob 先由 Copy 用 mech+0x258（unit 资源）序列化，再被 Respawn 拷进 game+0x1E9C8。
+- mech+0x258 == clone 资源指针，可作为身份校验。
+
+### 工具
+- mods/native/bkswap/bkswap.c（导出 luaopen_bkswap）；命令文件 %TEMP%\bk_swap.txt：diag / morph / copy / respawn / go <path>；日志 %TEMP%\bk_swap.log。
+- 编译：C:\bk\build_bkswap.bat（VS18 vcvars64 + cl /LD /utf-8）。DLL 被进程占用时改输出文件名。
+- 控制台：lua local f,e=package.loadlib("C:/bk/bkswap2.dll","luaopen_bkswap"); if f then f() print("OK") else print(e) end
+- 已加载载具清单可用 rtmem.py 扫 resarr（本次关卡 190 个 arch14/11/13）。
+
+## 2026-11-23 设计需求：mod 热切换接口 + 玩家私有 dummy（隔离敌人）
+
+目标：把换类能力做成可复用接口，供后续 mod 热切换；核心是「玩家上车瞬间」自动生成 dummy，玩家实际用 dummy，原型资源不动，敌人数据不受影响。
+
+### 接口（C ABI，bkswap.dll 导出）
+- int  bks_swap(const char* asset_path)   立即换到指定载具：目标运行时资源 → 玩家私有槽 → copy+respawn
+- int  bks_swap_loaded(int resarr_idx)     同上，按索引
+- void* bks_player_unit()                  玩家当前 MECH 资源指针（应恒等于 dummy 槽）
+- void* bks_player_mech()                  玩家 mech 对象
+- int  bks_auto(int on)                    自动接管开关
+- const char* bks_last_error()
+- Lua 侧仍用 luaopen_bkswap + %TEMP%\bk_swap.txt（命令：diag/morph/copy/respawn/go）
+
+### 自动接管流程（bks_auto on）
+1. 捕获「玩家换载具」事件：新原型资源 X（关卡内已加载）
+2. 拷贝 X 的 MECH(18448) + LEG(4528) 到玩家私有槽（dummy，默认 idx 9990）
+3. 调 Copy + Respawn，让实体重建于 dummy
+4. 之后 mod 只改 dummy；敌人引用原型 X 不变
+
+### 隔离边界（必须告知）
+- 目前是浅拷贝：dummy 的子资源指针（upper/lower/武器/配方等）仍与原型共享；改顶层字段安全，改子资源会波及敌人。
+- 需要完全隔离则要做深拷贝：为每个被引用子资源也预留私有槽。
+
+### 待定：事件捕获方式（按优先级）
+A. 内联 hook 写入 mech+0x258 的指令或「玩家上车/重生」函数（精确、零轮询）
+B. hook Respawn 0x1401892C0，过滤 rcx==[base+0xB64838] 玩家 ctrl；触发后重跑 dummy 流程
+C. 每帧 tick hook（需先定位主循环更新函数），每帧只读 mech+0x258 做变化检测
+- 轮询线程不可行：引擎调用必须主线程，线程无法安全触达主线程执行点。
+
+## 2026-11-23 自动接管已实测通过（bkswap3.dll）
+
+### 事件捕获方式（最终采用 C 的变体）
+- **hook 点：SDL2 延迟导入槽 `exe+0x49D710`**（thunk `0x140316F26: jmp qword ptr [rip+0x1867E4]`，槽内运行时为 SDL2.dll 内真实地址）。
+  每帧开头（`App::frame` 的 `SDL_PumpEvents`）在主线程回调一次；只做一次 `mech+0x258` 指针比较，不遍历世界、无轮询线程。
+- 主线程校验：`g_main_tid = GetCurrentThreadId()`（DllMain 时记录），非主线程直接跳过 tick。
+
+### ★ 关键发现：重生后玩家会挂到「原型」上（隔离问题的实证）
+- `go volta` 之后 `mech+0x258 = 0x20C12B0F680`，正是 Volta 原型资源地址（不是 dummy 槽）。
+- 即 Respawn 重建时引擎按载具数据里的资产引用解析回原型 → 玩家与敌人共享同一份数据。
+- 因此自动接管必须在**引擎重生完成后的下一帧**把 `mech+0x258` 指回 dummy；首帧拦截做不到。
+
+### 实测日志（同一次会话）
+```
+18:20:48 auto: ON
+18:20:48 auto: unit change 0 -> 0x20C26A0B560 (Cinderblock 原型)
+18:20:48 auto: dummy <- src ... ; mech+0x258 -> dummy 0x20C21CB70A0 (swap #1)
+18:21:27 auto: unit change dummy -> 0x20C12B0F680 (Volta 原型)
+18:21:27 auto: dummy <- src ... ; mech+0x258 -> dummy 0x20C21CB70A0 (swap #2)
+```
+玩家在游戏内**实际换乘红甲（Volta）**被自动捕获，无需任何控制台操作。
+
+### 隔离性验证（内存级）
+- `dummy` 与 Volta 原型逐字节比对 18448B：**只有 +0xC0（LEG 指针）不同**（指向 dummy 自己的 LEG），其余完全一致 → dummy 是原型的独立副本。
+- 把 dummy LEG `+0x101C max_forward_speed` 从 2.5 改为 10.0：dummy=10.0，**原型仍 2.5** → 修改不会泄漏到原型/敌人。
+
+### 产物 / 用法
+- `mods/native/bkswap/bkswap.c`、`bkswap.h`；编译输出 `C:\bk\bkswap3.dll`。
+- 导出：`bks_auto_enable/disable/state`、`bks_swap`、`bks_player_mech/unit`、`bks_dummy_unit`、`bks_asset_addr`、`bks_last_error`、`bks_version`、`luaopen_bkswap`。
+- 控制台：`lua local f,e=package.loadlib("C:/bk/bkswap3.dll","luaopen_bkswap"); if f then f() print("OK") else print(e) end`
+- 命令文件增加：`auto on` / `auto off` / `auto`（状态）。
+- 已知约束：每次检测到换载具，dummy 会被新原型整块覆盖 → **mod 必须在 swap 后重新施加自己的修改**（当前需自行轮询 `bks_player_unit()`，后续可加 swap 回调）。
+
+## 2026-11-23 玩家背包（Inventory）结构与物品定位
+
+### 静态：Lua 方法表（.rdata @ 0x1403D28A0）
+| 方法 | 函数 | 说明 |
+|---|---|---|
+| AddInventory | 0x1401A96F0 | 往 `[mech+0x238]+0x250` 容器插入 {item, 1, count} |
+| TakeInventory | 0x1401A97E0 | 同类 |
+| IsInInventory | 0x1401A98D0 | 先查 `[mech+0x238]+0x250`，再查 `mech+0xB78` / `mech+0xB60..0xB68`（0x58 stride） |
+| GetInventory | 0x14003B850 | ★ **空实现（xor eax,eax; ret）** → Lua 读不到背包 |
+| SetEntryPredicate | 0x1401A9B50 | — |
+
+### 运行时布局（实测，本局）
+- 玩家 mech 重新解析（复刻 0x140024C80 的 vector-of-vector 查表）：
+  ctrl=`[exe+0xB64838]` → game=`[ctrl+0x40]` → state=game+0x1C468 → container=`[state]`、key=`[state+0x30]`；
+  container 是「外层 12 组 × 0x18B，内层 0x10B {u32 id, u32 pad, Mech*}]」，key=[0,30,0] → **mech=0x20B80F7BDB8**。
+- 背包容器：`sub=[mech+0x238]`，`sub+0x250` = vector，begin=0x20CDC620910，17 个 slot（元素 0x18）。
+- **本次物品（pkp_comp_actuator_small，pack idx 3415）在 slot[9]**：
+  slot[9] = {begin=0x20CDB74E650, end=0x20CDB74E668}，元素 = {item资源 0x20C1D8D3A00, 0x20C1D8D3A01, qty=1}。
+- 物品资源本身 arch=61 / 768B，内含 `pkp_comp_actuator_small.name` / `.description` 两个本地化键。
+
+### 工具
+- `C:\bk\resolve_player.py`（纯读取复刻查表，输出 mech 与背包 slots）
+- `C:\bk\probe_inv.py` / `read_inv.py` / `dump_region.py` / `scan_ptr.py` / `analyze_hits.py`
+
+## 2026-11-23 背包条件速度加成（已完成并实测）
+
+- 成品：`mods/native/bkswap/bin/bkswap7.dll`（源码同目录），构建脚本 `C:\bk\build_bkswap.bat`。
+- 行为：每 tick 检查背包（`mech+0x238` → `+0x250` 容器，元素 `{begin,end,cap}`，在 `[begin,end)` 内按 0x18 找 item），
+  命中则把 dummy LEG 的 3 向最大速度 + 3 向加速度改为「浮动基准 × mult」，移除物品立即还原。
+- 实测（19:00:18 / 19:00:22）：
+  ```
+  speed: APPLY x2.00 (leg=0x20C21CBB8E0 base fwd=2.500)
+  speed: restore x2.00 (leg=... base fwd=2.500)
+  ```
+- 性能：`tick: avg_us≈200`，tick 频率约 120/s（SDL_PumpEvents 会被 SDL_PollEvent 重复触发）。
+
+### 踩坑（重要）
+1. 背包是**两层**：容器元素 `{begin,end,cap}`，`begin` 直接指向条目数组，**不要**再对 begin 解引用取 vector 头。
+2. `mem_ok(p, 0)` 必须返回失败：空 slot 的值是 `0xFFFFFFFFFFFFFFFF`，长度 0 会让循环不执行而误判可读，
+   随后 `[0xFFFF...]` 读取 → 每 tick 访问违例 + 日志刷屏 → 严重卡顿。
+3. 需要 `e2 > b2` 而不是 `>=`。
+4. `0x140024C80` 的查表可纯读取复刻：container 外层 12 组×0x18（`{begin,end}`），内层 0x10（`{u32 id, pad, Mech*}`），
+   key=[0,30,0] → 玩家 mech。
