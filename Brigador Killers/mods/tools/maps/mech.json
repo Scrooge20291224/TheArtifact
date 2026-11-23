@@ -1,0 +1,385 @@
+{
+ "asset": "assets/data/vics/units/rig_volta_carmine_01.json",
+ "archetype": 14,
+ "struct_size": 18448,
+ "verified": 88,
+ "mismatch": 0,
+ "fields": {
+  "has_hands": {
+   "offset": 248,
+   "kind": "i32"
+  },
+  "overcharge": {
+   "offset": 12936,
+   "kind": "f32"
+  },
+  "overcharge_decay": {
+   "offset": 12940,
+   "kind": "f32"
+  },
+  "health": {
+   "offset": 12944,
+   "kind": "f32"
+  },
+  "armor": {
+   "offset": 12948,
+   "kind": "f32"
+  },
+  "sight_radius": {
+   "offset": 12952,
+   "kind": "f32"
+  },
+  "crouch_awareness_zoom": {
+   "offset": 12956,
+   "kind": "f32"
+  },
+  "crouch_aim_bonus": {
+   "offset": 12960,
+   "kind": "f32"
+  },
+  "morale_area_buff": {
+   "offset": 12968,
+   "kind": "f32"
+  },
+  "full_vision_cone": {
+   "offset": 12972,
+   "kind": "i32"
+  },
+  "use_leg_orientation": {
+   "offset": 12992,
+   "kind": "i32"
+  },
+  "is_boss": {
+   "offset": 12993,
+   "kind": "i32"
+  },
+  "mass": {
+   "offset": 13448,
+   "kind": "f32"
+  },
+  "knockback_push_scaling": {
+   "offset": 13452,
+   "kind": "f32"
+  },
+  "knockback_turn_scaling": {
+   "offset": 13456,
+   "kind": "f32"
+  },
+  "behavior": {
+   "offset": 13460,
+   "kind": "i32_enum"
+  },
+  "unit_aistate_on_bail": {
+   "offset": 13460,
+   "kind": "i32_enum"
+  },
+  "call_help_period": {
+   "offset": 13468,
+   "kind": "f32"
+  },
+  "call_help_radius": {
+   "offset": 13472,
+   "kind": "f32"
+  },
+  "can_radio": {
+   "offset": 13476,
+   "kind": "i32"
+  },
+  "is_concealed": {
+   "offset": 13492,
+   "kind": "i32"
+  },
+  "secret": {
+   "offset": 13504,
+   "kind": "i32"
+  },
+  "requires_pilot": {
+   "offset": 13540,
+   "kind": "i32"
+  },
+  "seatbelt": {
+   "offset": 14032,
+   "kind": "i32"
+  },
+  "animate_with_parent": {
+   "offset": 14033,
+   "kind": "i32"
+  },
+  "incognito": {
+   "offset": 17648,
+   "kind": "i32"
+  },
+  "incognito_awareness_multiplier": {
+   "offset": 17652,
+   "kind": "f32"
+  },
+  "size_factor": {
+   "offset": 17656,
+   "kind": "f32"
+  },
+  "size_perception_factor": {
+   "offset": 17660,
+   "kind": "f32"
+  },
+  "size_perception_floor": {
+   "offset": 17664,
+   "kind": "f32"
+  },
+  "size_perception_ceil": {
+   "offset": 17668,
+   "kind": "f32"
+  },
+  "morale_reveal_damage": {
+   "offset": 17672,
+   "kind": "f32"
+  },
+  "zoom_override": {
+   "offset": 17676,
+   "kind": "f32"
+  },
+  "death_morale_damage": {
+   "offset": 17680,
+   "kind": "f32"
+  },
+  "pain_threshold": {
+   "offset": 17684,
+   "kind": "f32"
+  },
+  "pain_chance": {
+   "offset": 17688,
+   "kind": "f32"
+  },
+  "pain_guarantee": {
+   "offset": 17692,
+   "kind": "f32"
+  },
+  "flinch_refresh_time": {
+   "offset": 17696,
+   "kind": "f32"
+  },
+  "flinch_duration": {
+   "offset": 17700,
+   "kind": "f32"
+  },
+  "flinch_deviation": {
+   "offset": 17704,
+   "kind": "f32"
+  },
+  "flinch_spin_min": {
+   "offset": 17708,
+   "kind": "f32"
+  },
+  "flinch_spin_max": {
+   "offset": 17712,
+   "kind": "f32"
+  },
+  "flinch_spin_cooldown": {
+   "offset": 17716,
+   "kind": "f32"
+  },
+  "flinch_timer_resets": {
+   "offset": 17724,
+   "kind": "i32"
+  },
+  "stability": {
+   "offset": 17732,
+   "kind": "f32"
+  },
+  "moving_stability": {
+   "offset": 17736,
+   "kind": "f32"
+  },
+  "crouching_stability_modifier": {
+   "offset": 17740,
+   "kind": "f32"
+  },
+  "morale_stability_debuff_factor": {
+   "offset": 17744,
+   "kind": "f32"
+  },
+  "zoom_max": {
+   "offset": 17748,
+   "kind": "f32"
+  },
+  "zoom_min": {
+   "offset": 17752,
+   "kind": "f32"
+  },
+  "phys_damage_start": {
+   "offset": 17756,
+   "kind": "f32"
+  },
+  "phys_damage_totaled": {
+   "offset": 17760,
+   "kind": "f32"
+  },
+  "ejection_velocity_threshold": {
+   "offset": 17764,
+   "kind": "f32"
+  },
+  "ejection_damping": {
+   "offset": 17768,
+   "kind": "f32"
+  },
+  "ejection_instant_acceleration_required": {
+   "offset": 17772,
+   "kind": "f32"
+  },
+  "ejection_cone_width": {
+   "offset": 17776,
+   "kind": "f32_deg"
+  },
+  "ejection_cone_offset": {
+   "offset": 17780,
+   "kind": "f32"
+  },
+  "flee_exit": {
+   "offset": 17784,
+   "kind": "i32"
+  },
+  "bleedout_threshold": {
+   "offset": 17788,
+   "kind": "f32"
+  },
+  "bleedout_damage_per_second": {
+   "offset": 17792,
+   "kind": "f32"
+  },
+  "bleedout_causes_boost": {
+   "offset": 17796,
+   "kind": "i32"
+  },
+  "allow_brick_on_pedal": {
+   "offset": 17797,
+   "kind": "i32"
+  },
+  "reload_reposition_chance": {
+   "offset": 17800,
+   "kind": "f32"
+  },
+  "cowardice_cooldown": {
+   "offset": 17804,
+   "kind": "f32"
+  },
+  "freeze_on_seen_duration": {
+   "offset": 17808,
+   "kind": "f32"
+  },
+  "bail_guarantee_vehicle_hp_percentage": {
+   "offset": 17816,
+   "kind": "f32"
+  },
+  "unit_morale_on_bail": {
+   "offset": 17820,
+   "kind": "f32"
+  },
+  "bail_when_vehicle_burndown_active": {
+   "offset": 17824,
+   "kind": "i32"
+  },
+  "death_explosion.delay": {
+   "offset": 17828,
+   "kind": "f32"
+  },
+  "death_explosion.deviation": {
+   "offset": 17832,
+   "kind": "f32"
+  },
+  "death_explosion.impulse": {
+   "offset": 17836,
+   "kind": "f32"
+  },
+  "death_explosion.prop_damage_multiplier": {
+   "offset": 17840,
+   "kind": "f32"
+  },
+  "death_explosion.hull_damage_multiplier": {
+   "offset": 17844,
+   "kind": "f32"
+  },
+  "death_explosion.shield_damage_multiplier": {
+   "offset": 17848,
+   "kind": "f32"
+  },
+  "death_explosion.falloff_begin_distance": {
+   "offset": 17852,
+   "kind": "f32"
+  },
+  "death_explosion.falloff_clamp": {
+   "offset": 17856,
+   "kind": "f32"
+  },
+  "death_explosion.morale_damage": {
+   "offset": 17860,
+   "kind": "f32"
+  },
+  "radius": {
+   "offset": 18036,
+   "kind": "f32"
+  },
+  "damage": {
+   "offset": 18040,
+   "kind": "f32"
+  },
+  "damage_deviation": {
+   "offset": 18044,
+   "kind": "f32"
+  },
+  "push": {
+   "offset": 18048,
+   "kind": "f32"
+  },
+  "push_decay": {
+   "offset": 18092,
+   "kind": "f32"
+  },
+  "flop_threshold": {
+   "offset": 18096,
+   "kind": "f32"
+  },
+  "flop_duration": {
+   "offset": 18100,
+   "kind": "f32"
+  },
+  "flop_deviation": {
+   "offset": 18104,
+   "kind": "f32"
+  },
+  "prone_height": {
+   "offset": 18108,
+   "kind": "f32"
+  },
+  "baselayer": {
+   "offset": 18112,
+   "kind": "i32"
+  },
+  "occlusion_peek_radius": {
+   "offset": 18244,
+   "kind": "f32"
+  },
+  "occlusion_peek_height_offset": {
+   "offset": 18248,
+   "kind": "f32"
+  },
+  "use_vehicle_filter": {
+   "offset": 18264,
+   "kind": "i32"
+  },
+  "cockpit_type": {
+   "offset": 18268,
+   "kind": "i32_enum"
+  },
+  "undeployable": {
+   "offset": 18280,
+   "kind": "i32"
+  },
+  "min_slavageable_part_chance": {
+   "offset": 18284,
+   "kind": "f32"
+  },
+  "max_salvageable_part_chance": {
+   "offset": 18288,
+   "kind": "f32"
+  }
+ }
+}

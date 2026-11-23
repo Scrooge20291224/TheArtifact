@@ -1,0 +1,504 @@
+{
+ "ability": {
+  "struct_size": 824,
+  "funcB": "0x140213700",
+  "fields": {
+   "slide_damping": {
+    "offset": 24,
+    "kind": "f32"
+   },
+   "height_delta": {
+    "offset": 28,
+    "kind": "f32"
+   },
+   "stomp_offset": {
+    "offset": 32,
+    "kind": "f32"
+   },
+   "stomp_radius": {
+    "offset": 36,
+    "kind": "f32"
+   },
+   "stomp_length": {
+    "offset": 40,
+    "kind": "f32"
+   },
+   "mitigation_modifier": {
+    "offset": 672,
+    "kind": "f32"
+   },
+   "accuracy_modifier": {
+    "offset": 676,
+    "kind": "f32"
+   },
+   "stomp_reverse_framerate_factor": {
+    "offset": 44,
+    "kind": "f32"
+   },
+   "stomp_damage": {
+    "offset": 48,
+    "kind": "f32"
+   },
+   "stomp_sound_radius": {
+    "offset": 52,
+    "kind": "f32"
+   },
+   "stomp_pause": {
+    "offset": 56,
+    "kind": "f32"
+   },
+   "stomp_trigger_distance": {
+    "offset": 60,
+    "kind": "f32"
+   },
+   "ai_stomp_interval": {
+    "offset": 200,
+    "kind": "f32"
+   },
+   "stomp_with_upper": {
+    "offset": 480,
+    "kind": "i32"
+   },
+   "stomp_orients_from_upper": {
+    "offset": 481,
+    "kind": "i32"
+   },
+   "use_kick": {
+    "offset": 482,
+    "kind": "i32"
+   },
+   "punch_offset": {
+    "offset": 536,
+    "kind": "f32"
+   },
+   "punch_length": {
+    "offset": 540,
+    "kind": "f32"
+   },
+   "punch_framerate_factor": {
+    "offset": 544,
+    "kind": "f32"
+   },
+   "punch_damage": {
+    "offset": 548,
+    "kind": "f32"
+   },
+   "punch_impulse": {
+    "offset": 552,
+    "kind": "f32"
+   },
+   "punch_push": {
+    "offset": 556,
+    "kind": "f32"
+   },
+   "punch_push_impulse": {
+    "offset": 560,
+    "kind": "f32"
+   },
+   "punch_sound_radius": {
+    "offset": 568,
+    "kind": "f32"
+   },
+   "ai_sprint_multiplier": {
+    "offset": 96,
+    "kind": "f32"
+   },
+   "recharge_rate": {
+    "offset": 680,
+    "kind": "f32"
+   },
+   "boost_damage": {
+    "offset": 684,
+    "kind": "f32"
+   },
+   "boost_accuracy_modifier": {
+    "offset": 716,
+    "kind": "f32"
+   },
+   "boost_stability_addend": {
+    "offset": 720,
+    "kind": "f32"
+   },
+   "duration": {
+    "offset": 688,
+    "kind": "f32"
+   },
+   "cooldown": {
+    "offset": 692,
+    "kind": "f32"
+   },
+   "recharge_delay": {
+    "offset": 696,
+    "kind": "f32"
+   },
+   "speed_bonus": {
+    "offset": 700,
+    "kind": "f32"
+   },
+   "acceleration_bonus": {
+    "offset": 708,
+    "kind": "f32"
+   },
+   "turn_bonus": {
+    "offset": 712,
+    "kind": "f32"
+   },
+   "exhaustion_recharge_delay": {
+    "offset": 736,
+    "kind": "f32"
+   },
+   "exhaustion_speed_bonus": {
+    "offset": 724,
+    "kind": "f32"
+   },
+   "exhaustion_acceleration_bonus": {
+    "offset": 728,
+    "kind": "f32"
+   },
+   "exhaustion_turn_bonus": {
+    "offset": 732,
+    "kind": "f32"
+   },
+   "exhaustion_stability_addend": {
+    "offset": 740,
+    "kind": "f32"
+   },
+   "stamina_depleted_stability_addend": {
+    "offset": 756,
+    "kind": "f32"
+   },
+   "dive_frictionless_period": {
+    "offset": 768,
+    "kind": "f32"
+   },
+   "dive_impulse": {
+    "offset": 760,
+    "kind": "f32"
+   },
+   "minimum_dive_interval": {
+    "offset": 764,
+    "kind": "f32"
+   },
+   "speed_penalty": {
+    "offset": 744,
+    "kind": "f32"
+   },
+   "acceleration_penalty": {
+    "offset": 748,
+    "kind": "f32"
+   },
+   "initial_amount": {
+    "offset": 752,
+    "kind": "f32"
+   },
+   "damage_ratio_floor": {
+    "offset": 808,
+    "kind": "f32"
+   },
+   "damage_percentage_at_floor": {
+    "offset": 812,
+    "kind": "f32"
+   },
+   "cap_damage_at_max_speed": {
+    "offset": 816,
+    "kind": "i32"
+   },
+   "ai_stomp_predict": {
+    "offset": 204,
+    "kind": "f32"
+   },
+   "ai_stomp_delay": {
+    "offset": 208,
+    "kind": "f32"
+   }
+  }
+ },
+ "mech_ability": {
+  "struct_size": 96,
+  "funcB": "0x1402196d0",
+  "fields": {
+   "slide_damping": {
+    "offset": 8,
+    "kind": "f32"
+   },
+   "height_delta": {
+    "offset": 12,
+    "kind": "f32"
+   },
+   "stomp_offset": {
+    "offset": 16,
+    "kind": "f32"
+   },
+   "stomp_radius": {
+    "offset": 20,
+    "kind": "f32"
+   },
+   "mitigation_modifier": {
+    "offset": 24,
+    "kind": "f32"
+   },
+   "accuracy_modifier": {
+    "offset": 28,
+    "kind": "f32"
+   },
+   "stomp_reverse_framerate_factor": {
+    "offset": 32,
+    "kind": "f32"
+   },
+   "damage": {
+    "offset": 36,
+    "kind": "f32"
+   },
+   "stomp_sound_radius": {
+    "offset": 40,
+    "kind": "f32"
+   },
+   "stomp_pause": {
+    "offset": 44,
+    "kind": "f32"
+   },
+   "stomp_trigger_distance": {
+    "offset": 48,
+    "kind": "f32"
+   },
+   "ai_stomp_interval": {
+    "offset": 88,
+    "kind": "f32"
+   }
+  }
+ },
+ "tank_ability": {
+  "struct_size": 96,
+  "funcB": "0x14021e4e0",
+  "fields": {
+   "damage": {
+    "offset": 4,
+    "kind": "f32"
+   },
+   "duration": {
+    "offset": 8,
+    "kind": "f32"
+   },
+   "cooldown": {
+    "offset": 12,
+    "kind": "f32"
+   },
+   "speed_bonus": {
+    "offset": 16,
+    "kind": "f32"
+   },
+   "acceleration_bonus": {
+    "offset": 20,
+    "kind": "f32"
+   },
+   "turn_bonus": {
+    "offset": 24,
+    "kind": "f32"
+   },
+   "speed_penalty": {
+    "offset": 28,
+    "kind": "f32"
+   },
+   "acceleration_penalty": {
+    "offset": 32,
+    "kind": "f32"
+   },
+   "initial_amount": {
+    "offset": 36,
+    "kind": "f32"
+   }
+  }
+ },
+ "powinf_ability": {
+  "struct_size": 192,
+  "funcB": "0x14021c540",
+  "fields": {
+   "slide_damping": {
+    "offset": 8,
+    "kind": "f32"
+   },
+   "height_delta": {
+    "offset": 12,
+    "kind": "f32"
+   },
+   "stomp_offset": {
+    "offset": 16,
+    "kind": "f32"
+   },
+   "stomp_radius": {
+    "offset": 20,
+    "kind": "f32"
+   },
+   "mitigation_modifier": {
+    "offset": 24,
+    "kind": "f32"
+   },
+   "crouch_accuracy_modifier": {
+    "offset": 28,
+    "kind": "f32"
+   },
+   "stomp_reverse_framerate_factor": {
+    "offset": 32,
+    "kind": "f32"
+   },
+   "damage": {
+    "offset": 36,
+    "kind": "f32"
+   },
+   "stomp_sound_radius": {
+    "offset": 40,
+    "kind": "f32"
+   },
+   "stomp_pause": {
+    "offset": 44,
+    "kind": "f32"
+   },
+   "stomp_trigger_distance": {
+    "offset": 48,
+    "kind": "f32"
+   },
+   "ai_stomp_interval": {
+    "offset": 88,
+    "kind": "f32"
+   },
+   "speed_bonus_deviation": {
+    "offset": 116,
+    "kind": "f32"
+   },
+   "recharge_rate": {
+    "offset": 96,
+    "kind": "f32"
+   },
+   "sprint_damage": {
+    "offset": 100,
+    "kind": "f32"
+   },
+   "sprint_accuracy_modifier": {
+    "offset": 140,
+    "kind": "f32"
+   },
+   "duration": {
+    "offset": 104,
+    "kind": "f32"
+   },
+   "cooldown": {
+    "offset": 108,
+    "kind": "f32"
+   },
+   "speed_bonus": {
+    "offset": 112,
+    "kind": "f32"
+   },
+   "acceleration_bonus": {
+    "offset": 120,
+    "kind": "f32"
+   },
+   "turn_bonus": {
+    "offset": 124,
+    "kind": "f32"
+   },
+   "speed_penalty": {
+    "offset": 128,
+    "kind": "f32"
+   },
+   "acceleration_penalty": {
+    "offset": 132,
+    "kind": "f32"
+   },
+   "initial_amount": {
+    "offset": 136,
+    "kind": "f32"
+   },
+   "damage_ratio_floor": {
+    "offset": 176,
+    "kind": "f32"
+   },
+   "damage_percentage_at_floor": {
+    "offset": 180,
+    "kind": "f32"
+   },
+   "cap_damage_at_max_speed": {
+    "offset": 184,
+    "kind": "i32"
+   }
+  }
+ },
+ "hover_ability": {
+  "struct_size": 192,
+  "funcB": "0x140218950",
+  "fields": {
+   "hover_height": {
+    "offset": 16,
+    "kind": "f32"
+   },
+   "hover_frequency": {
+    "offset": 20,
+    "kind": "f32"
+   },
+   "hover_amplitude": {
+    "offset": 24,
+    "kind": "f32"
+   },
+   "ascent_speed": {
+    "offset": 28,
+    "kind": "f32"
+   },
+   "descent_speed": {
+    "offset": 32,
+    "kind": "f32"
+   },
+   "stomp_radius": {
+    "offset": 36,
+    "kind": "f32"
+   },
+   "mitigation_modifier": {
+    "offset": 40,
+    "kind": "f32"
+   },
+   "accuracy_modifier": {
+    "offset": 44,
+    "kind": "f32"
+   },
+   "damage": {
+    "offset": 48,
+    "kind": "f32"
+   },
+   "lowfly_hover_multiplier": {
+    "offset": 52,
+    "kind": "f32"
+   },
+   "lowfly_acceleration_multiplier": {
+    "offset": 56,
+    "kind": "f32"
+   },
+   "lowfly_speed_multiplier": {
+    "offset": 60,
+    "kind": "f32"
+   },
+   "stomp_sound_radius": {
+    "offset": 64,
+    "kind": "f32"
+   },
+   "use_lowfly": {
+    "offset": 68,
+    "kind": "i32"
+   },
+   "ai_stomp_interval": {
+    "offset": 168,
+    "kind": "f32"
+   },
+   "ai_stomp_predict": {
+    "offset": 172,
+    "kind": "f32"
+   },
+   "ai_stomp_delay": {
+    "offset": 176,
+    "kind": "f32"
+   },
+   "ai_stomp_offset": {
+    "offset": 180,
+    "kind": "f32"
+   }
+  }
+ }
+}
